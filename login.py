@@ -7,7 +7,7 @@ def login_callback():
         st.session_state.logged_in = True
         st.session_state.client_id = client_id_input
         st.success("Login successful!")
-        st.rerun()  # Refresh the app immediately
+       # st.rerun()  # Refresh the app immediately
     else:
         st.error("Invalid Client ID. Please try again.")
 
