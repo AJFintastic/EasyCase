@@ -9,6 +9,11 @@ if "logged_in" not in st.session_state:
 if "client_id" not in st.session_state:
     st.session_state.client_id = None
 
+def logout():
+    st.session_state.logged_in = False
+    st.session_state.client_id = None
+    st.experimental_rerun()
+
 def main():
     st.title("⚖️ AM Law Inc - Client Portal")
 
@@ -17,11 +22,22 @@ def main():
         show_login()
         return  # Prevent sidebar from appearing
 
-    # Once logged in, show sidebar navigation
+    # Sidebar with navigation and logout button
     st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox("Go to", ["Onboarding", "Legal AI Advisor"])
+    # Define pages with icons
+    pages = {
+        "🏠 Onboarding": "Onboarding",
+        "🤖 Legal AI Advisor": "Legal AI Advisor"
+    }
+    selected_page = st.sidebar.selectbox("Go to", list(pages.keys()))
+    
+    # Add spacing and a logout button at the bottom of the sidebar
+    st.sidebar.markdown("---")
+    if st.sidebar.button("🔓 Logout"):
+        logout()
 
     # Page routing
+    page = pages[selected_page]
     if page == "Onboarding":
         show_onboarding()
     elif page == "Legal AI Advisor":
