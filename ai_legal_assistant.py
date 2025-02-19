@@ -2,6 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+import concurrent.futures  # For parallel API calls
 
 # Load environment variables
 load_dotenv()
@@ -10,7 +11,7 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Initialize model
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
 
 # South African Legal parameters
 SA_CASE_TYPES = [
@@ -28,26 +29,23 @@ SA_JURISDICTIONS = [
     "Eastern Cape", "Limpopo", "Mpumalanga"
 ]
 
-# ---------------------------
-# Helper: Initialize Session State Keys
-# ---------------------------
-def initialize_session_state():
-    keys_defaults = {
-        "report_generated": False,
-        "generated_sections": [],
-        "case_type": SA_CASE_TYPES[0],
-        "jurisdiction": SA_JURISDICTIONS[0],
-        "legal_question": "",
-        "involved_parties": "",
-        "existing_docs": ""
-    }
-    for key, default in keys_defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = default
+# Session state initialization – done outside any conditional so it's always set
+if 'report_generated' not in st.session_state:
+    st.session_state.report_generated = False
+if 'generated_sections' not in st.session_state:
+    st.session_state.generated_sections = []
+if 'case_type' not in st.session_state:
+    st.session_state.case_type = SA_CASE_TYPES[0]
+if 'jurisdiction' not in st.session_state:
+    st.session_state.jurisdiction = SA_JURISDICTIONS[0]
+if 'legal_question' not in st.session_state:
+    st.session_state.legal_question = ""
+if 'involved_parties' not in st.session_state:
+    st.session_state.involved_parties = ""
+if 'existing_docs' not in st.session_state:
+    st.session_state.existing_docs = ""
 
-# ---------------------------
 # SA Legal styling
-# ---------------------------
 st.markdown("""
 <style>
     .legal-box {
@@ -81,9 +79,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------
-# AI Legal Analysis Function
-# ---------------------------
 def get_legal_analysis(prompt, case_type, jurisdiction, legal_question, involved_parties, existing_docs):
     try:
         legal_context = f"""
@@ -103,16 +98,12 @@ def get_legal_analysis(prompt, case_type, jurisdiction, legal_question, involved
         - Note provincial legal variations if applicable
         - Suggest local legal aid resources
         """
-        
         response = model.generate_content(legal_context)
         return response.text
     except Exception as e:
         st.error(f"Legal AI Error: {str(e)}")
         return None
 
-# ---------------------------
-# Form Reset Function
-# ---------------------------
 def clear_form():
     st.session_state.report_generated = False
     st.session_state.generated_sections = []
@@ -122,16 +113,10 @@ def clear_form():
     st.session_state.involved_parties = ""
     st.session_state.existing_docs = ""
 
-# ---------------------------
-# Main Function: Display the AI Legal Assistant page
-# ---------------------------
 def show_legal_assistant():
     """
     Display the AI Legal Assistant page.
     """
-    # Initialize session state keys for this page
-    initialize_session_state()
-
     st.title("⚖️ SA Legal AI Advisor")
     st.markdown("---")
     
@@ -170,21 +155,25 @@ def show_legal_assistant():
                     {"title": "Legal Aid", "prompt": "Suggest legal aid clinics and pro bono services"}
                 ]
                 
+                # Run the API calls concurrently
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    responses = list(executor.map(
+                        lambda sec: get_legal_analysis(
+                            sec["prompt"],
+                            st.session_state.case_type,
+                            st.session_state.jurisdiction,
+                            st.session_state.legal_question,
+                            st.session_state.involved_parties,
+                            st.session_state.existing_docs
+                        ),
+                        sections
+                    ))
+                
                 generated_sections = []
-                for section in sections:
-                    response = get_legal_analysis(
-                        section["prompt"],
-                        st.session_state.case_type,
-                        st.session_state.jurisdiction,
-                        st.session_state.legal_question,
-                        st.session_state.involved_parties,
-                        st.session_state.existing_docs
-                    )
+                for section, response in zip(sections, responses):
                     if not response:
-                        st.session_state.report_generated = False
-                        st.error("Failed to generate legal analysis")
+                        st.error(f"Failed to generate legal analysis for {section['title']}")
                         st.stop()
-                    
                     generated_sections.append({
                         "title": section["title"],
                         "content": response
