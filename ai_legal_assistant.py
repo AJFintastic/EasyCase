@@ -132,7 +132,7 @@ def show_legal_assistant():
     # Ensure session state keys are initialized
     initialize_session_state()
 
-    st.title("⚖️ SA Legal AI Advisor")
+    st.title("🤖 AM Law AI Advisor 🤖")
     st.markdown("---")
     
     # Input Section
