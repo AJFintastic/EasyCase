@@ -155,16 +155,23 @@ def show_legal_assistant():
                     {"title": "Legal Aid", "prompt": "Suggest legal aid clinics and pro bono services"}
                 ]
                 
-                # Run the API calls concurrently
+                # Extract values from session state into local variables
+                local_case_type = st.session_state.case_type
+                local_jurisdiction = st.session_state.jurisdiction
+                local_legal_question = st.session_state.legal_question
+                local_involved_parties = st.session_state.involved_parties
+                local_existing_docs = st.session_state.existing_docs
+
+                # Run the API calls concurrently using local variables
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     responses = list(executor.map(
                         lambda sec: get_legal_analysis(
                             sec["prompt"],
-                            st.session_state.case_type,
-                            st.session_state.jurisdiction,
-                            st.session_state.legal_question,
-                            st.session_state.involved_parties,
-                            st.session_state.existing_docs
+                            local_case_type,
+                            local_jurisdiction,
+                            local_legal_question,
+                            local_involved_parties,
+                            local_existing_docs
                         ),
                         sections
                     ))
