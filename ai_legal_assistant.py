@@ -28,23 +28,26 @@ SA_JURISDICTIONS = [
     "Eastern Cape", "Limpopo", "Mpumalanga"
 ]
 
-# Session state initialization – done outside any conditional so it's always set
-if 'report_generated' not in st.session_state:
-    st.session_state.report_generated = False
-if 'generated_sections' not in st.session_state:
-    st.session_state.generated_sections = []
-if 'case_type' not in st.session_state:
-    st.session_state.case_type = SA_CASE_TYPES[0]
-if 'jurisdiction' not in st.session_state:
-    st.session_state.jurisdiction = SA_JURISDICTIONS[0]
-if 'legal_question' not in st.session_state:
-    st.session_state.legal_question = ""
-if 'involved_parties' not in st.session_state:
-    st.session_state.involved_parties = ""
-if 'existing_docs' not in st.session_state:
-    st.session_state.existing_docs = ""
+# ---------------------------
+# Helper: Initialize Session State Keys
+# ---------------------------
+def initialize_session_state():
+    keys_defaults = {
+        "report_generated": False,
+        "generated_sections": [],
+        "case_type": SA_CASE_TYPES[0],
+        "jurisdiction": SA_JURISDICTIONS[0],
+        "legal_question": "",
+        "involved_parties": "",
+        "existing_docs": ""
+    }
+    for key, default in keys_defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = default
 
+# ---------------------------
 # SA Legal styling
+# ---------------------------
 st.markdown("""
 <style>
     .legal-box {
@@ -78,6 +81,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ---------------------------
+# AI Legal Analysis Function
+# ---------------------------
 def get_legal_analysis(prompt, case_type, jurisdiction, legal_question, involved_parties, existing_docs):
     try:
         legal_context = f"""
@@ -104,6 +110,9 @@ def get_legal_analysis(prompt, case_type, jurisdiction, legal_question, involved
         st.error(f"Legal AI Error: {str(e)}")
         return None
 
+# ---------------------------
+# Form Reset Function
+# ---------------------------
 def clear_form():
     st.session_state.report_generated = False
     st.session_state.generated_sections = []
@@ -113,10 +122,16 @@ def clear_form():
     st.session_state.involved_parties = ""
     st.session_state.existing_docs = ""
 
+# ---------------------------
+# Main Function: Display the AI Legal Assistant page
+# ---------------------------
 def show_legal_assistant():
     """
     Display the AI Legal Assistant page.
     """
+    # Initialize session state keys for this page
+    initialize_session_state()
+
     st.title("⚖️ SA Legal AI Advisor")
     st.markdown("---")
     
