@@ -12,7 +12,7 @@ if "client_id" not in st.session_state:
 def logout():
     st.session_state.logged_in = False
     st.session_state.client_id = None
-    st.experimental_rerun()
+    st.rerun()
 
 def main():
     st.title("⚖️ AM Law Inc - Client Portal")
